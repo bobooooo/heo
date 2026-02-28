@@ -1,0 +1,49 @@
+import Link from "next/link";
+
+const navItems = [
+  { href: "/", label: "帮助广场" },
+  { href: "/requests/new", label: "发布求助" },
+  { href: "/me/requests", label: "我的求助" },
+  { href: "/me/offers", label: "我的帮助" },
+  { href: "/notifications", label: "通知" },
+];
+
+export default function MainLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen">
+      <header className="px-6 py-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-[#b45632]">
+              Neighborhood Help
+            </p>
+            <h1 className="font-display text-3xl text-[#2b2620]">
+              互相帮助广场
+            </h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full border border-white/70 bg-white/70 px-4 py-1 text-xs text-[#5b5146]">
+              今日活跃 24
+            </span>
+            <button className="btn-primary">发布新求助</button>
+          </div>
+        </div>
+        <nav className="mx-auto mt-6 flex w-full max-w-6xl flex-wrap gap-2">
+          {navItems.map((item) => (
+            <Link key={item.href} href={item.href} className="btn-ghost">
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </header>
+
+      <main className="px-6 pb-16">
+        <div className="mx-auto w-full max-w-6xl">{children}</div>
+      </main>
+    </div>
+  );
+}
