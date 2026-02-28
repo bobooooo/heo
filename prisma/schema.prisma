@@ -16,6 +16,7 @@ model User {
   sessions  Session[]
   requests  HelpRequest[]
   offers    HelpOffer[]
+  notifications Notification[]
 }
 
 model Profile {
