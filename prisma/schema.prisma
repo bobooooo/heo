@@ -6,3 +6,102 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id        String       @id @default(cuid())
+  username  String       @unique
+  password  String
+  createdAt DateTime     @default(now())
+  profile   Profile?
+  sessions  Session[]
+  requests  HelpRequest[]
+  offers    HelpOffer[]
+}
+
+model Profile {
+  id     String  @id @default(cuid())
+  userId String  @unique
+  name   String?
+  phone  String?
+  wechat String?
+  user   User    @relation(fields: [userId], references: [id])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model City {
+  id          String       @id @default(cuid())
+  name        String
+  communities Community[]
+  requests    HelpRequest[]
+}
+
+model Community {
+  id       String        @id @default(cuid())
+  name     String
+  cityId   String
+  city     City          @relation(fields: [cityId], references: [id])
+  requests HelpRequest[]
+}
+
+enum RequestStatus {
+  OPEN
+  MATCHED
+  COMPLETED
+  CANCELED
+}
+
+enum OfferStatus {
+  PENDING
+  SELECTED
+  REJECTED
+  CANCELED
+}
+
+model HelpRequest {
+  id            String        @id @default(cuid())
+  userId        String
+  cityId        String
+  communityId   String
+  time          DateTime
+  title         String
+  category      String
+  detail        String
+  contactPhone  String
+  contactWechat String
+  status        RequestStatus @default(OPEN)
+  createdAt     DateTime      @default(now())
+  user          User          @relation(fields: [userId], references: [id])
+  city          City          @relation(fields: [cityId], references: [id])
+  community     Community     @relation(fields: [communityId], references: [id])
+  offers        HelpOffer[]
+}
+
+model HelpOffer {
+  id        String      @id @default(cuid())
+  requestId String
+  helperId  String
+  name      String
+  phone     String
+  wechat    String
+  status    OfferStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  request   HelpRequest @relation(fields: [requestId], references: [id])
+  helper    User        @relation(fields: [helperId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
