@@ -1,17 +1,25 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireUser } from "@/server/auth/require-user";
+import { getProfile } from "@/server/profile";
+import { getRequest } from "@/server/requests";
+import RequestHelpForm from "@/components/request-help-form";
 
-const detail = {
-  title: "陪诊：明日下午去医院",
-  city: "上海",
-  community: "静安",
-  time: "明日 14:00",
-  category: "陪诊",
-  detail: "需要有人陪同挂号、取药，预计 2 小时。希望熟悉医院流程的朋友帮助。",
-  contactPhone: "联系后可见",
-  contactWechat: "联系后可见",
-};
+export default async function RequestDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const request = await getRequest(params.id);
+  if (!request) {
+    notFound();
+  }
 
-export default function RequestDetailPage() {
+  const user = await requireUser();
+  const profile = user ? await getProfile(user.id) : null;
+  const isOwner = user?.id === request.userId;
+  const isOpen = request.status === "OPEN";
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <section className="paper-card p-8">
@@ -19,46 +27,47 @@ export default function RequestDetailPage() {
           求助详情
         </p>
         <h2 className="font-display mt-2 text-3xl text-[#2b2620]">
-          {detail.title}
+          {request.title}
         </h2>
         <div className="mt-4 flex flex-wrap gap-3 text-sm text-[#5b5146]">
-          <span>{detail.city}</span>
+          <span>{request.city.name}</span>
           <span>·</span>
-          <span>{detail.community}</span>
+          <span>{request.community.name}</span>
           <span>·</span>
-          <span>{detail.time}</span>
+          <span>{new Date(request.time).toLocaleString("zh-CN")}</span>
         </div>
-        <p className="mt-4 text-sm text-[#5b5146]">分类：{detail.category}</p>
+        <p className="mt-4 text-sm text-[#5b5146]">分类：{request.category}</p>
         <p className="mt-6 text-base leading-relaxed text-[#4b453d]">
-          {detail.detail}
+          {request.detail}
         </p>
+        <div className="mt-6 rounded-2xl border border-white/70 bg-white/70 p-4 text-sm text-[#5b5146]">
+          <p>联系电话：{request.contactPhone}</p>
+          <p className="mt-2">联系微信：{request.contactWechat}</p>
+        </div>
       </section>
 
       <aside id="help" className="paper-card p-8">
-        <h3 className="font-display text-2xl text-[#2b2620]">
-          我可以帮忙
-        </h3>
+        <h3 className="font-display text-2xl text-[#2b2620]">我可以帮忙</h3>
         <p className="mt-2 text-sm text-[#5b5146]">
           提交联系方式后，发布者会看到你的信息并选择合适的帮助者。
         </p>
-        <div className="mt-6 space-y-4">
-          <label className="text-sm text-[#5b5146]">
-            姓名
-            <input className="input-field mt-2" placeholder="填写姓名" />
-          </label>
-          <label className="text-sm text-[#5b5146]">
-            电话
-            <input className="input-field mt-2" placeholder="填写手机号" />
-          </label>
-          <label className="text-sm text-[#5b5146]">
-            微信
-            <input className="input-field mt-2" placeholder="填写微信号" />
-          </label>
-          <button className="btn-primary w-full">提交帮助</button>
-          <Link className="btn-ghost w-full text-center" href="/">
-            返回广场
-          </Link>
-        </div>
+        <RequestHelpForm
+          requestId={request.id}
+          defaultName={profile?.name}
+          defaultPhone={profile?.phone}
+          defaultWechat={profile?.wechat}
+          disabled={isOwner || !isOpen}
+          disabledReason={
+            isOwner
+              ? "自己发布的求助无法申请帮助"
+              : !isOpen
+              ? "该求助已无法申请"
+              : undefined
+          }
+        />
+        <Link className="btn-ghost mt-4 w-full text-center" href="/">
+          返回广场
+        </Link>
       </aside>
     </div>
   );

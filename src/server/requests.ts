@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { createNotification } from "./notifications";
 
 export type RequestInput = {
   cityId: string;
@@ -40,32 +41,86 @@ export async function listRequests(filters: RequestFilters) {
       communityId: filters.communityId,
       status: filters.status,
     },
+    include: {
+      city: true,
+      community: true,
+      _count: { select: { offers: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function listRequestsByUser(userId: string) {
+  return prisma.helpRequest.findMany({
+    where: { userId },
+    include: {
+      city: true,
+      community: true,
+      offers: true,
+    },
     orderBy: { createdAt: "desc" },
   });
 }
 
 export async function getRequest(id: string) {
-  return prisma.helpRequest.findUnique({ where: { id } });
+  return prisma.helpRequest.findUnique({
+    where: { id },
+    include: {
+      city: true,
+      community: true,
+      offers: true,
+      _count: { select: { offers: true } },
+    },
+  });
 }
 
 export async function cancelRequest(id: string, userId: string) {
-  const request = await prisma.helpRequest.findUnique({ where: { id } });
+  const request = await prisma.helpRequest.findUnique({
+    where: { id },
+    include: { offers: true },
+  });
   if (!request || request.userId !== userId) {
     return null;
   }
-  return prisma.helpRequest.update({
+
+  const updated = await prisma.helpRequest.update({
     where: { id },
     data: { status: "CANCELED" },
   });
+
+  const helperIds = request.offers.map((offer) => offer.helperId);
+  await Promise.all(
+    helperIds.map((helperId) =>
+      createNotification(helperId, "request_canceled", { requestId: id })
+    )
+  );
+
+  return updated;
 }
 
 export async function completeRequest(id: string, userId: string) {
-  const request = await prisma.helpRequest.findUnique({ where: { id } });
+  const request = await prisma.helpRequest.findUnique({
+    where: { id },
+    include: { offers: true },
+  });
   if (!request || request.userId !== userId) {
     return null;
   }
-  return prisma.helpRequest.update({
+
+  const updated = await prisma.helpRequest.update({
     where: { id },
     data: { status: "COMPLETED" },
   });
+
+  const selectedHelpers = request.offers
+    .filter((offer) => offer.status === "SELECTED")
+    .map((offer) => offer.helperId);
+
+  await Promise.all(
+    selectedHelpers.map((helperId) =>
+      createNotification(helperId, "request_completed", { requestId: id })
+    )
+  );
+
+  return updated;
 }

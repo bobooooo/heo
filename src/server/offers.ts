@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { createNotification } from "./notifications";
 
 export type OfferInput = {
   name: string;
@@ -11,7 +12,7 @@ export async function createOffer(
   helperId: string,
   input: OfferInput
 ) {
-  return prisma.helpOffer.create({
+  const offer = await prisma.helpOffer.create({
     data: {
       requestId,
       helperId,
@@ -20,6 +21,20 @@ export async function createOffer(
       wechat: input.wechat,
     },
   });
+
+  const request = await prisma.helpRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (request) {
+    await createNotification(request.userId, "offer_submitted", {
+      requestId,
+      offerId: offer.id,
+      helperId,
+    });
+  }
+
+  return offer;
 }
 
 export async function selectOffer(
@@ -52,11 +67,31 @@ export async function selectOffer(
     }),
   ]);
 
+  const rejectedIds = request.offers
+    .filter((offer) => offer.id !== offerId)
+    .map((offer) => offer.helperId);
+
+  await Promise.all([
+    createNotification(selected.helperId, "offer_selected", {
+      requestId,
+      offerId,
+    }),
+    ...rejectedIds.map((helperId) =>
+      createNotification(helperId, "offer_rejected", {
+        requestId,
+        offerId,
+      })
+    ),
+  ]);
+
   return { selectedId: offerId };
 }
 
 export async function cancelOffer(offerId: string, helperId: string) {
-  const offer = await prisma.helpOffer.findUnique({ where: { id: offerId } });
+  const offer = await prisma.helpOffer.findUnique({
+    where: { id: offerId },
+    include: { request: true },
+  });
   if (!offer || offer.helperId !== helperId) return null;
 
   await prisma.helpOffer.update({
@@ -70,6 +105,12 @@ export async function cancelOffer(offerId: string, helperId: string) {
       data: { status: "OPEN" },
     });
   }
+
+  await createNotification(offer.request.userId, "offer_canceled", {
+    requestId: offer.requestId,
+    offerId,
+    helperId,
+  });
 
   return offer;
 }
@@ -94,5 +135,25 @@ export async function cancelOfferByOwner(offerId: string, ownerId: string) {
     });
   }
 
+  await createNotification(offer.helperId, "offer_canceled_by_owner", {
+    requestId: offer.requestId,
+    offerId,
+  });
+
   return offer;
+}
+
+export async function listOffersByUser(helperId: string) {
+  return prisma.helpOffer.findMany({
+    where: { helperId },
+    include: {
+      request: {
+        include: {
+          city: true,
+          community: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/components/logout-button";
+import ProfilePrompt from "@/components/profile-prompt";
 import { requireUser } from "@/server/auth/require-user";
 
 const navItems = [
@@ -8,6 +9,7 @@ const navItems = [
   { href: "/requests/new", label: "发布求助" },
   { href: "/me/requests", label: "我的求助" },
   { href: "/me/offers", label: "我的帮助" },
+  { href: "/me/profile", label: "我的资料" },
   { href: "/notifications", label: "通知" },
 ];
 
@@ -54,6 +56,7 @@ export default async function MainLayout({
           ))}
         </nav>
       </header>
+      <ProfilePrompt />
 
       <main className="px-6 pb-16">
         <div className="mx-auto w-full max-w-6xl">{children}</div>
