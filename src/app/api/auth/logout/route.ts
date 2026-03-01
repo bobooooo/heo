@@ -1,12 +1,12 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { deleteSessionByToken } from "@/server/auth/session";
 import { readSessionToken } from "@/server/auth/session-token";
 
 export async function POST() {
   const token = await readSessionToken(cookies());
   if (token) {
-    await prisma.session.deleteMany({ where: { token } });
+    await deleteSessionByToken(token);
   }
 
   const res = NextResponse.json({ ok: true });

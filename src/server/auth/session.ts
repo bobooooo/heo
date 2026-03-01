@@ -18,3 +18,9 @@ export async function getUserBySessionToken(token: string) {
 
   return session.user;
 }
+
+export async function deleteSessionByToken(token: string) {
+  if (!token) return 0;
+  const result = await prisma.session.deleteMany({ where: { token } });
+  return result.count;
+}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import LogoutButton from "@/components/logout-button";
 import { requireUser } from "@/server/auth/require-user";
 
 const navItems = [
@@ -42,6 +43,7 @@ export default async function MainLayout({
             <Link href="/requests/new" className="btn-primary">
               发布新求助
             </Link>
+            <LogoutButton />
           </div>
         </div>
         <nav className="mx-auto mt-6 flex w-full max-w-6xl flex-wrap gap-2">
