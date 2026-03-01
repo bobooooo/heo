@@ -1,3 +1,9 @@
+import Link from "next/link";
+import {
+  getRequestDetailHref,
+  getRequestHelpHref,
+} from "@/lib/request-links";
+
 const requests = [
   {
     id: "1",
@@ -49,7 +55,13 @@ export default function HomePage() {
             选择你所在的城市与小区，看看附近有哪些正在等待帮助的需求。
           </p>
           <div className="mt-6 flex flex-wrap gap-2 text-xs">
-            {["陪诊", "喂猫", "遛狗", "代买药", "陪同办事"].map((tag) => (
+            {[
+              "陪诊",
+              "喂猫",
+              "遛狗",
+              "代买药",
+              "陪同办事",
+            ].map((tag) => (
               <span
                 key={tag}
                 className="tag border border-[#e7d6c4] bg-white/70 text-[#7a6e60]"
@@ -63,7 +75,9 @@ export default function HomePage() {
               <p className="text-xs uppercase tracking-[0.3em] text-[#b45632]">
                 今日新增
               </p>
-              <p className="mt-2 text-3xl font-semibold text-[#2b2620]">18</p>
+              <p className="mt-2 text-3xl font-semibold text-[#2b2620]">
+                18
+              </p>
             </div>
             <div className="rounded-2xl border border-white/70 bg-white/80 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-[#b45632]">
@@ -131,10 +145,15 @@ export default function HomePage() {
 
         <div className="mt-6 grid gap-4">
           {requests.map((item) => (
-            <article key={item.id} className="rounded-3xl border border-white/70 bg-white/80 p-6">
+            <article
+              key={item.id}
+              className="rounded-3xl border border-white/70 bg-white/80 p-6"
+            >
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs text-[#7a6e60]">{item.city} · {item.community}</p>
+                  <p className="text-xs text-[#7a6e60]">
+                    {item.city} · {item.community}
+                  </p>
                   <h4 className="mt-2 text-lg font-semibold text-[#2b2620]">
                     {item.title}
                   </h4>
@@ -151,8 +170,12 @@ export default function HomePage() {
                 <span>分类：{item.category}</span>
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
-                <button className="btn-primary">我可以帮忙</button>
-                <button className="btn-ghost">查看详情</button>
+                <Link className="btn-primary" href={getRequestHelpHref(item.id)}>
+                  我可以帮忙
+                </Link>
+                <Link className="btn-ghost" href={getRequestDetailHref(item.id)}>
+                  查看详情
+                </Link>
               </div>
             </article>
           ))}

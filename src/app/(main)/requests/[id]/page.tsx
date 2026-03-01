@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const detail = {
   title: "陪诊：明日下午去医院",
   city: "上海",
@@ -32,7 +34,7 @@ export default function RequestDetailPage() {
         </p>
       </section>
 
-      <aside className="paper-card p-8">
+      <aside id="help" className="paper-card p-8">
         <h3 className="font-display text-2xl text-[#2b2620]">
           我可以帮忙
         </h3>
@@ -53,7 +55,9 @@ export default function RequestDetailPage() {
             <input className="input-field mt-2" placeholder="填写微信号" />
           </label>
           <button className="btn-primary w-full">提交帮助</button>
-          <button className="btn-ghost w-full">返回广场</button>
+          <Link className="btn-ghost w-full text-center" href="/">
+            返回广场
+          </Link>
         </div>
       </aside>
     </div>
