@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireUser } from "@/server/auth/require-user";
 
 const navItems = [
   { href: "/", label: "帮助广场" },
@@ -8,11 +10,16 @@ const navItems = [
   { href: "/notifications", label: "通知" },
 ];
 
-export default function MainLayout({
+export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await requireUser();
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <div className="min-h-screen">
       <header className="px-6 py-8">
@@ -24,12 +31,17 @@ export default function MainLayout({
             <h1 className="font-display text-3xl text-[#2b2620]">
               互相帮助广场
             </h1>
+            <p className="mt-2 text-sm text-[#5b5146]">
+              欢迎回来，{user.username}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-full border border-white/70 bg-white/70 px-4 py-1 text-xs text-[#5b5146]">
               今日活跃 24
             </span>
-            <button className="btn-primary">发布新求助</button>
+            <Link href="/requests/new" className="btn-primary">
+              发布新求助
+            </Link>
           </div>
         </div>
         <nav className="mx-auto mt-6 flex w-full max-w-6xl flex-wrap gap-2">

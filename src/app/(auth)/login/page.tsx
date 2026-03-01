@@ -1,6 +1,47 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+
+    if (!username || !password) {
+      setError("请输入用户名和密码");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data?.error || "登录失败");
+        return;
+      }
+
+      router.push("/");
+    } catch (err) {
+      setError("网络错误，请稍后再试");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="mb-8">
@@ -13,10 +54,15 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <form className="flex flex-1 flex-col gap-4">
+      <form className="flex flex-1 flex-col gap-4" onSubmit={handleSubmit}>
         <label className="text-sm text-[#5b5146]">
           用户名
-          <input className="input-field mt-2" placeholder="输入用户名" />
+          <input
+            className="input-field mt-2"
+            placeholder="输入用户名"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+          />
         </label>
         <label className="text-sm text-[#5b5146]">
           密码
@@ -24,10 +70,17 @@ export default function LoginPage() {
             type="password"
             className="input-field mt-2"
             placeholder="输入密码"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
           />
         </label>
-        <button type="button" className="btn-primary mt-2">
-          登录进入
+        {error && (
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
+        <button type="submit" className="btn-primary mt-2" disabled={loading}>
+          {loading ? "正在登录..." : "登录进入"}
         </button>
       </form>
 
