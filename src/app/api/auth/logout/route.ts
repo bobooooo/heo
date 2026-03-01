@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { readSessionToken } from "@/server/auth/session-token";
 
 export async function POST() {
-  const token = cookies().get("session")?.value;
+  const token = await readSessionToken(cookies());
   if (token) {
     await prisma.session.deleteMany({ where: { token } });
   }
