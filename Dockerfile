@@ -9,7 +9,7 @@ RUN npm ci
 FROM base AS builder
 ARG NEXT_PUBLIC_API_BASE
 ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules ./node_modules
 COPY . .
 RUN npm run prisma:generate
 RUN npm run build
