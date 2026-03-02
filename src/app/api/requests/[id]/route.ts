@@ -4,7 +4,7 @@ import { unwrapParams } from "@/lib/params";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await unwrapParams(params);
   const request = await getRequest(id);

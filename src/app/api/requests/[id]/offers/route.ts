@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { unwrapParams } from "@/lib/params";
 import { requireUser } from "@/server/auth/require-user";
 import { createOffer } from "@/server/offers";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await unwrapParams(params);
   const user = await requireUser();
   if (!user) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  const request = await prisma.helpRequest.findUnique({
-    where: { id: params.id },
-  });
+  const request = await prisma.helpRequest.findUnique({ where: { id } });
   if (!request) {
     return NextResponse.json({ error: "未找到" }, { status: 404 });
   }
@@ -34,6 +34,6 @@ export async function POST(
     return NextResponse.json({ error: "联系方式必填" }, { status: 400 });
   }
 
-  const offer = await createOffer(params.id, user.id, { name, phone, wechat });
+  const offer = await createOffer(id, user.id, { name, phone, wechat });
   return NextResponse.json(offer);
 }
