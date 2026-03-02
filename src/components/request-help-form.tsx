@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { apiFetch } from "@/lib/api-base";
 
 type Props = {
   requestId: string;
@@ -46,7 +47,7 @@ export default function RequestHelpForm({
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/requests/${requestId}/offers`, {
+      const res = await apiFetch(`/api/requests/${requestId}/offers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, phone, wechat }),

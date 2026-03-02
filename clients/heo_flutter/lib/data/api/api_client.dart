@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
@@ -12,8 +10,7 @@ class ApiClient {
   final Dio dio;
 
   static Future<ApiClient> create() async {
-    final fallback =
-        Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+    final fallback = 'http://39.107.251.224:3000';
     final baseUrl = dotenv.env['API_BASE_URL'] ?? fallback;
     final options = BaseOptions(
       baseUrl: baseUrl,

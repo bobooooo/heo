@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api-base";
 
 type NotificationItem = {
   id: string;
@@ -30,7 +31,7 @@ export default function NotificationsClient() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/notifications");
+      const res = await apiFetch("/api/notifications");
       if (!res.ok) throw new Error();
       const data = await res.json();
       setItems(
@@ -51,7 +52,9 @@ export default function NotificationsClient() {
   }, []);
 
   const markRead = async (id: string) => {
-    await fetch(`/api/notifications/${id}/read`, { method: "POST" });
+    await apiFetch(`/api/notifications/${id}/read`, {
+      method: "POST",
+    });
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, readAt: new Date().toISOString() } : item))
     );

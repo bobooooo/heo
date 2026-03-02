@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { apiFetch } from "@/lib/api-base";
 
 export type MyOffer = {
   id: string;
@@ -37,7 +38,7 @@ export default function MyOffersClient({ offers }: { offers: MyOffer[] }) {
     setError(null);
     setLoadingId(offerId);
     try {
-      const res = await fetch(`/api/offers/${offerId}/cancel`, {
+      const res = await apiFetch(`/api/offers/${offerId}/cancel`, {
         method: "POST",
       });
       if (!res.ok) {

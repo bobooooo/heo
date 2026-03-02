@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api-base";
 
 type Profile = {
   name: string;
@@ -19,7 +20,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const loadProfile = async () => {
-      const res = await fetch("/api/profile");
+      const res = await apiFetch("/api/profile");
       if (!res.ok) return;
       const data = await res.json();
       setProfile({
@@ -37,7 +38,7 @@ export default function ProfilePage() {
     setLoading(true);
     setMessage(null);
 
-    const res = await fetch("/api/profile", {
+    const res = await apiFetch("/api/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(profile),

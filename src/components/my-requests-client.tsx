@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { apiFetch } from "@/lib/api-base";
 
 export type RequestOffer = {
   id: string;
@@ -34,11 +35,11 @@ export default function MyRequestsClient({ requests }: { requests: MyRequest[] }
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAction = async (url: string) => {
+  const handleAction = async (path: string) => {
     setError(null);
-    setLoadingId(url);
+    setLoadingId(path);
     try {
-      const res = await fetch(url, { method: "POST" });
+      const res = await apiFetch(path, { method: "POST" });
       if (!res.ok) {
         const data = await res.json();
         setError(data?.error || "操作失败");

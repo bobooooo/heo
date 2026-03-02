@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiFetch } from "@/lib/api-base";
 
 type SeedSummary = {
   users: number;
@@ -18,7 +19,9 @@ export default function DemoSeedPanel() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/demo/seed", { method: "POST" });
+      const res = await apiFetch("/api/demo/seed", {
+        method: "POST",
+      });
       const data = await res.json();
       if (!res.ok) {
         setError(data?.error || "生成失败");

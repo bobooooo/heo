@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getGroupedCityOptions } from "@/lib/city-data";
+import { apiFetch } from "@/lib/api-base";
 
 type City = { id: string; name: string };
 type CityGroupOption = { label: string; options: City[] };
@@ -28,7 +29,7 @@ export default function NewRequestPage() {
   useEffect(() => {
     const loadCities = async () => {
       try {
-        const res = await fetch("/api/cities");
+        const res = await apiFetch("/api/cities");
         const data: City[] = await res.json();
         const cityMap = new Map(data.map((city) => [city.name, city.id]));
         const grouped = getGroupedCityOptions()
@@ -83,7 +84,7 @@ export default function NewRequestPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/requests", {
+      const res = await apiFetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
