@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -56,6 +57,11 @@ export default function MyOffersClient({ offers }: { offers: MyOffer[] }) {
     return (
       <div className="rounded-3xl border border-dashed border-[#e7d6c4] bg-white/70 p-10 text-center text-sm text-[#7a6e60]">
         还没有帮助记录。
+        <div className="mt-4">
+          <Link className="btn-primary" href="/">
+            去帮助广场看看
+          </Link>
+        </div>
       </div>
     );
   }

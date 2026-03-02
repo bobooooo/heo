@@ -1,9 +1,10 @@
 import { prisma } from "../lib/prisma";
 import { createNotification } from "./notifications";
+import { getDefaultCommunityId } from "./cities";
 
 export type RequestInput = {
   cityId: string;
-  communityId: string;
+  communityId?: string;
   time: string;
   title: string;
   category: string;
@@ -19,11 +20,14 @@ export type RequestFilters = {
 };
 
 export async function createRequest(userId: string, input: RequestInput) {
+  const resolvedCommunityId =
+    input.communityId ?? (await getDefaultCommunityId(input.cityId));
+
   return prisma.helpRequest.create({
     data: {
       userId,
       cityId: input.cityId,
-      communityId: input.communityId,
+      communityId: resolvedCommunityId,
       time: new Date(input.time),
       title: input.title,
       category: input.category,
@@ -63,6 +67,7 @@ export async function listRequestsByUser(userId: string) {
 }
 
 export async function getRequest(id: string) {
+  if (!id) return null;
   return prisma.helpRequest.findUnique({
     where: { id },
     include: {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { newSessionToken } from "@/server/auth/session";
-import { createUser } from "@/server/auth/user";
+import { createUser, UsernameTakenError } from "@/server/auth/user";
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -12,7 +12,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "缺少用户名或密码" }, { status: 400 });
   }
 
-  const user = await createUser(username, password);
+  let user;
+  try {
+    user = await createUser(username, password);
+  } catch (error) {
+    if (error instanceof UsernameTakenError) {
+      return NextResponse.json({ error: "用户名已被占用" }, { status: 409 });
+    }
+    throw error;
+  }
   const token = newSessionToken();
 
   await prisma.session.create({

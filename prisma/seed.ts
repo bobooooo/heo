@@ -1,17 +1,63 @@
+import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { prisma } from "../src/lib/prisma";
 
-const cities = [
-  { name: "上海", communities: ["静安", "徐汇", "浦东"] },
-  { name: "北京", communities: ["朝阳", "海淀", "东城"] },
-  { name: "深圳", communities: ["南山", "福田", "罗湖"] },
-];
+type CityEntry = { code: string; city: string };
+type CityData = {
+  select_list: string[];
+  city_list: Record<string, CityEntry[]>;
+};
+
+const DEFAULT_COMMUNITY = "不限";
+
+async function loadCityNames(): Promise<string[]> {
+  const filePath = path.resolve(__dirname, "../src/data/city_list.json");
+  const raw = await readFile(filePath, "utf-8");
+  const data = JSON.parse(raw) as CityData;
+  const seen = new Set<string>();
+  const names: string[] = [];
+
+  for (const label of data.select_list) {
+    if (label === "热门城市") {
+      for (const item of data.city_list[label] ?? []) {
+        if (item.city === "全国") continue;
+        if (seen.has(item.city)) continue;
+        seen.add(item.city);
+        names.push(item.city);
+      }
+      continue;
+    }
+
+    for (const key of label.split("")) {
+      for (const item of data.city_list[key] ?? []) {
+        if (item.city === "全国") continue;
+        if (seen.has(item.city)) continue;
+        seen.add(item.city);
+        names.push(item.city);
+      }
+    }
+  }
+
+  return names;
+}
 
 async function main() {
-  for (const city of cities) {
-    const created = await prisma.city.create({ data: { name: city.name } });
-    await prisma.community.createMany({
-      data: city.communities.map((name) => ({ name, cityId: created.id })),
+  const cityNames = await loadCityNames();
+
+  for (const name of cityNames) {
+    const city =
+      (await prisma.city.findFirst({ where: { name } })) ??
+      (await prisma.city.create({ data: { name } }));
+
+    const community = await prisma.community.findFirst({
+      where: { cityId: city.id, name: DEFAULT_COMMUNITY },
     });
+
+    if (!community) {
+      await prisma.community.create({
+        data: { cityId: city.id, name: DEFAULT_COMMUNITY },
+      });
+    }
   }
 }
 

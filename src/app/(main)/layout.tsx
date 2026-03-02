@@ -4,7 +4,7 @@ import LogoutButton from "@/components/logout-button";
 import ProfilePrompt from "@/components/profile-prompt";
 import { requireUser } from "@/server/auth/require-user";
 
-const navItems = [
+const baseNavItems = [
   { href: "/", label: "帮助广场" },
   { href: "/requests/new", label: "发布求助" },
   { href: "/me/requests", label: "我的求助" },
@@ -22,6 +22,11 @@ export default async function MainLayout({
   if (!user) {
     redirect("/login");
   }
+
+  const navItems =
+    process.env.NODE_ENV !== "production"
+      ? [...baseNavItems, { href: "/demo", label: "演示数据" }]
+      : baseNavItems;
 
   return (
     <div className="min-h-screen">

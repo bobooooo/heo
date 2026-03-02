@@ -1,7 +1,9 @@
-import { defineConfig } from "vitest/config";
+import type { UserConfig } from "vitest";
 
-export default defineConfig({
+const config: UserConfig = {
   test: {
     environment: "node",
   },
-});
+};
+
+export default config;

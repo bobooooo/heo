@@ -4,7 +4,8 @@ import { createRequest, listRequests } from "@/server/requests";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const cityId = searchParams.get("cityId") ?? undefined;
+  const cityParam = searchParams.get("cityId");
+  const cityId = cityParam && cityParam !== "all" ? cityParam : undefined;
   const communityId = searchParams.get("communityId") ?? undefined;
   const status = searchParams.get("status") ?? undefined;
 
@@ -23,16 +24,23 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const request = await createRequest(user.id, {
-    cityId: body.cityId,
-    communityId: body.communityId,
-    time: body.time,
-    title: body.title,
-    category: body.category,
-    detail: body.detail,
-    contactPhone: body.contactPhone,
-    contactWechat: body.contactWechat,
-  });
+  try {
+    const request = await createRequest(user.id, {
+      cityId: body.cityId,
+      communityId: body.communityId,
+      time: body.time,
+      title: body.title,
+      category: body.category,
+      detail: body.detail,
+      contactPhone: body.contactPhone,
+      contactWechat: body.contactWechat,
+    });
 
-  return NextResponse.json(request);
+    return NextResponse.json(request);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "城市暂无可用小区，请稍后再试" },
+      { status: 400 }
+    );
+  }
 }

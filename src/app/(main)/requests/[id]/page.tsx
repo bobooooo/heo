@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { unwrapParams } from "@/lib/params";
 import { requireUser } from "@/server/auth/require-user";
 import { getProfile } from "@/server/profile";
 import { getRequest } from "@/server/requests";
@@ -8,9 +9,10 @@ import RequestHelpForm from "@/components/request-help-form";
 export default async function RequestDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: { id: string } | Promise<{ id: string }>;
 }) {
-  const request = await getRequest(params.id);
+  const { id } = await unwrapParams(params);
+  const request = await getRequest(id);
   if (!request) {
     notFound();
   }

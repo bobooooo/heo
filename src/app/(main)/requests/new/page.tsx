@@ -2,16 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { getGroupedCityOptions } from "@/lib/city-data";
 
 type City = { id: string; name: string };
-type Community = { id: string; name: string };
+type CityGroupOption = { label: string; options: City[] };
 
 const categories = ["陪诊", "喂猫", "遛狗"];
 
 export default function NewRequestPage() {
   const router = useRouter();
-  const [cities, setCities] = useState<City[]>([]);
-  const [communities, setCommunities] = useState<Community[]>([]);
+  const [cityGroups, setCityGroups] = useState<CityGroupOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +19,6 @@ export default function NewRequestPage() {
     time: "",
     title: "",
     cityId: "",
-    communityId: "",
     category: categories[0],
     detail: "",
     contactPhone: "",
@@ -30,13 +29,29 @@ export default function NewRequestPage() {
     const loadCities = async () => {
       try {
         const res = await fetch("/api/cities");
-        const data = await res.json();
-        setCities(data);
-        if (data.length) {
+        const data: City[] = await res.json();
+        const cityMap = new Map(data.map((city) => [city.name, city.id]));
+        const grouped = getGroupedCityOptions()
+          .map((group) => ({
+            label: group.label,
+            options: group.options
+              .map((item) => ({
+                id: cityMap.get(item.city),
+                name: item.city,
+              }))
+              .filter((item): item is City => Boolean(item.id)),
+          }))
+          .filter((group) => group.options.length > 0);
+
+        setCityGroups(grouped);
+
+        if (grouped.length) {
           setForm((prev) => ({
             ...prev,
-            cityId: data[0].id,
+            cityId: grouped[0].options[0].id,
           }));
+        } else {
+          setError("暂无可用城市，请先初始化城市数据");
         }
       } catch (err) {
         setError("城市数据加载失败");
@@ -46,33 +61,11 @@ export default function NewRequestPage() {
     loadCities();
   }, []);
 
-  useEffect(() => {
-    const loadCommunities = async () => {
-      if (!form.cityId) return;
-      try {
-        const res = await fetch(`/api/cities/${form.cityId}/communities`);
-        const data = await res.json();
-        setCommunities(data);
-        if (data.length) {
-          setForm((prev) => ({
-            ...prev,
-            communityId: data[0].id,
-          }));
-        }
-      } catch (err) {
-        setError("小区数据加载失败");
-      }
-    };
-
-    loadCommunities();
-  }, [form.cityId]);
-
   const isDisabled = useMemo(() => {
     return (
       !form.time ||
       !form.title ||
       !form.cityId ||
-      !form.communityId ||
       !form.detail ||
       !form.contactPhone ||
       !form.contactWechat
@@ -97,7 +90,6 @@ export default function NewRequestPage() {
           time: form.time,
           title: form.title,
           cityId: form.cityId,
-          communityId: form.communityId,
           category: form.category,
           detail: form.detail,
           contactPhone: form.contactPhone,
@@ -127,7 +119,7 @@ export default function NewRequestPage() {
         </p>
         <h2 className="font-display text-3xl text-[#2b2620]">说出你的需求</h2>
         <p className="mt-2 text-sm text-[#5b5146]">
-          清晰的描述能帮助你更快匹配到合适的帮忙者。
+          清晰的描述能帮助你更快匹配到合适的帮忙者，小区默认不限。
         </p>
       </div>
 
@@ -159,6 +151,7 @@ export default function NewRequestPage() {
           <select
             className="select-field mt-2"
             value={form.cityId}
+            disabled={cityGroups.length === 0}
             onChange={(event) =>
               setForm((prev) => ({
                 ...prev,
@@ -166,31 +159,28 @@ export default function NewRequestPage() {
               }))
             }
           >
-            {cities.map((city) => (
-              <option key={city.id} value={city.id}>
-                {city.name}
-              </option>
-            ))}
+            {cityGroups.length === 0 ? (
+              <option value="">正在加载城市...</option>
+            ) : (
+              cityGroups.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((city) => (
+                    <option key={city.id} value={city.id}>
+                      {city.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))
+            )}
           </select>
         </label>
         <label className="text-sm text-[#5b5146]">
           小区
-          <select
-            className="select-field mt-2"
-            value={form.communityId}
-            onChange={(event) =>
-              setForm((prev) => ({
-                ...prev,
-                communityId: event.target.value,
-              }))
-            }
-          >
-            {communities.map((community) => (
-              <option key={community.id} value={community.id}>
-                {community.name}
-              </option>
-            ))}
-          </select>
+          <input
+            className="input-field mt-2"
+            value="不限（系统默认）"
+            readOnly
+          />
         </label>
         <label className="text-sm text-[#5b5146]">
           分类

@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { listCities, listCommunities } from "@/server/cities";
+import { listCities } from "@/server/cities";
 import { listRequests } from "@/server/requests";
+import { getGroupedCityOptions } from "@/lib/city-data";
 import { getRequestDetailHref, getRequestHelpHref } from "@/lib/request-links";
 
 const statusStyles: Record<string, string> = {
@@ -20,20 +21,35 @@ const statusLabel: Record<string, string> = {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams?: { cityId?: string; communityId?: string; status?: string };
+  searchParams?: { cityId?: string; status?: string };
 }) {
   const cities = await listCities();
-  const selectedCityId = searchParams?.cityId ?? cities[0]?.id;
-  const communities = selectedCityId
-    ? await listCommunities(selectedCityId)
-    : [];
-  const selectedCommunityId =
-    searchParams?.communityId ?? communities[0]?.id ?? undefined;
+  const cityMap = new Map(cities.map((city) => [city.name, city.id]));
+  const groupedCities = getGroupedCityOptions()
+    .map((group) => ({
+      label: group.label,
+      options: group.options
+        .map((item) => ({
+          id: cityMap.get(item.city),
+          name: item.city,
+        }))
+        .filter(
+          (item): item is { id: string; name: string } => Boolean(item.id)
+        ),
+    }))
+    .filter((group) => group.options.length > 0);
+  const selectedCityValue = searchParams?.cityId ?? "all";
+  const selectedCityId =
+    selectedCityValue === "all" ? undefined : selectedCityValue;
   const status = searchParams?.status ?? "OPEN";
+
+  const selectedCityName =
+    selectedCityValue === "all"
+      ? "全部城市"
+      : cities.find((city) => city.id === selectedCityValue)?.name ?? "未选择";
 
   const requests = await listRequests({
     cityId: selectedCityId,
-    communityId: selectedCommunityId,
     status: status as "OPEN" | "MATCHED" | "COMPLETED" | "CANCELED",
   });
 
@@ -45,7 +61,7 @@ export default async function HomePage({
             今日互助广场
           </h2>
           <p className="mt-3 text-sm text-[#5b5146]">
-            选择你所在的城市与小区，查看正在等待帮助的需求。
+            选择你所在的城市，小区默认不限，即刻查看等待帮助的需求。
           </p>
           <div className="mt-6 flex flex-wrap gap-2 text-xs">
             {["陪诊", "喂猫", "遛狗", "代买药", "陪同办事"].map((tag) => (
@@ -71,7 +87,7 @@ export default async function HomePage({
                 筛选范围
               </p>
               <p className="mt-2 text-sm text-[#5b5146]">
-                {selectedCityId ? "已选择城市" : "未选择"}
+                {selectedCityName}
               </p>
             </div>
           </div>
@@ -79,7 +95,7 @@ export default async function HomePage({
         <div className="paper-card p-8 fade-up-delay">
           <h3 className="font-display text-2xl text-[#2b2620]">筛选范围</h3>
           <p className="mt-2 text-sm text-[#5b5146]">
-            先选定城市与小区，再查看附近的求助信息。
+            先选定城市，小区默认不限，再查看附近的求助信息。
           </p>
           <form className="mt-6 space-y-4" method="get">
             <label className="text-sm text-[#5b5146]">
@@ -87,26 +103,17 @@ export default async function HomePage({
               <select
                 name="cityId"
                 className="select-field mt-2"
-                defaultValue={selectedCityId}
+                defaultValue={selectedCityValue}
               >
-                {cities.map((city) => (
-                  <option key={city.id} value={city.id}>
-                    {city.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm text-[#5b5146]">
-              小区
-              <select
-                name="communityId"
-                className="select-field mt-2"
-                defaultValue={selectedCommunityId}
-              >
-                {communities.map((community) => (
-                  <option key={community.id} value={community.id}>
-                    {community.name}
-                  </option>
+                <option value="all">全部城市</option>
+                {groupedCities.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </label>
@@ -161,7 +168,7 @@ export default async function HomePage({
 
         {requests.length === 0 ? (
           <div className="mt-6 rounded-3xl border border-dashed border-[#e7d6c4] bg-white/70 p-10 text-center text-sm text-[#7a6e60]">
-            当前筛选条件下暂无求助需求，试试换一个城市或小区。
+            当前筛选条件下暂无求助需求，试试换一个城市或查看全部。
           </div>
         ) : (
           <div className="mt-6 grid gap-4">

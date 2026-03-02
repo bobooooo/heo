@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type NotificationItem = {
@@ -76,6 +77,11 @@ export default function NotificationsClient() {
     return (
       <div className="rounded-3xl border border-dashed border-[#e7d6c4] bg-white/70 p-10 text-center text-sm text-[#7a6e60]">
         暂无通知。
+        <div className="mt-4">
+          <Link className="btn-primary" href="/">
+            去帮助广场看看
+          </Link>
+        </div>
       </div>
     );
   }

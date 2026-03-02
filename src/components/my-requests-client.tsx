@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -55,6 +56,11 @@ export default function MyRequestsClient({ requests }: { requests: MyRequest[] }
     return (
       <div className="rounded-3xl border border-dashed border-[#e7d6c4] bg-white/70 p-10 text-center text-sm text-[#7a6e60]">
         还没有发布过求助。
+        <div className="mt-4">
+          <Link className="btn-primary" href="/requests/new">
+            去发布求助
+          </Link>
+        </div>
       </div>
     );
   }
