@@ -4,6 +4,8 @@ services:
     build:
       context: ../../..
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE}
     image: ${SERVER_IMAGE_NAME}:${SERVER_IMAGE_TAG}
     ports:
       - "${SERVER_APP_PORT}:3000"
@@ -11,4 +13,5 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
     restart: unless-stopped

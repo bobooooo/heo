@@ -79,18 +79,23 @@ jobs:
             echo "DATABASE_URL 未设置，请先在 GitHub Secrets 中配置";
             exit 1;
           fi
+          API_BASE="${{ secrets.NEXT_PUBLIC_API_BASE }}"
+          if [ -z "$API_BASE" ]; then
+            API_BASE="http://${{ secrets.SSH_HOST }}:$SERVER_APP_PORT"
+          fi
           ssh "$SSH_USER@${{ secrets.SSH_HOST }}" "cat > $REMOTE_DIR/.env <<'ENV'
           SERVER_APP_NAME=$SERVER_APP_NAME
           SERVER_APP_PORT=$SERVER_APP_PORT
           SERVER_IMAGE_NAME=$SERVER_IMAGE_NAME
           SERVER_IMAGE_TAG=$SERVER_IMAGE_TAG
+          NEXT_PUBLIC_API_BASE=$API_BASE
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           ENV"
 
       - name: Deploy server
         if: env.SERVER_CHANGED == 'true'
         run: |
-          ssh "$SSH_USER@${{ secrets.SSH_HOST }}" "cd $REMOTE_DIR && docker compose -f infra/docker/server/docker-compose.yml up -d --build"
+          ssh "$SSH_USER@${{ secrets.SSH_HOST }}" "cd $REMOTE_DIR && docker compose --env-file $REMOTE_DIR/.env -f infra/docker/server/docker-compose.yml up -d --build"
 
       - name: Health check
         if: env.SERVER_CHANGED == 'true'
