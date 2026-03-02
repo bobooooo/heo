@@ -1,6 +1,8 @@
 import path from "node:path";
 import { readFile } from "node:fs/promises";
-import { prisma } from "../src/lib/prisma";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 type CityEntry = { code: string; city: string };
 type CityData = {
@@ -11,7 +13,7 @@ type CityData = {
 const DEFAULT_COMMUNITY = "不限";
 
 async function loadCityNames(): Promise<string[]> {
-  const filePath = path.resolve(__dirname, "../src/data/city_list.json");
+  const filePath = path.resolve(__dirname, "./city_list.json");
   const raw = await readFile(filePath, "utf-8");
   const data = JSON.parse(raw) as CityData;
   const seen = new Set<string>();
