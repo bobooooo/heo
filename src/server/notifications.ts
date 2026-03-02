@@ -1,9 +1,10 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 
 export async function createNotification(
   userId: string,
   type: string,
-  payload: Record<string, unknown>
+  payload: Prisma.InputJsonValue
 ) {
   return prisma.notification.create({
     data: { userId, type, payload },
