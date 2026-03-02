@@ -86,11 +86,7 @@ jobs:
       - name: Write env
         if: env.SERVER_CHANGED == 'true'
         run: |
-          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
-            DATABASE_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB?schema=public"
-          else
-            DATABASE_URL="${{ secrets.DATABASE_URL }}"
-          fi
+          DATABASE_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB?schema=public"
           API_BASE="${{ secrets.NEXT_PUBLIC_API_BASE }}"
           if [ -z "$API_BASE" ]; then
             API_BASE="http://${{ secrets.SSH_HOST }}:$SERVER_APP_PORT"
