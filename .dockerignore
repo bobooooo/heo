@@ -1,0 +1,13 @@
+.env
+.env.*
+.git
+.gitignore
+node_modules
+.next
+out
+coverage
+*.log
+.DS_Store
+clients/heo_flutter/build
+clients/heo_flutter/.dart_tool
+clients/heo_flutter/.flutter-plugins-dependencies

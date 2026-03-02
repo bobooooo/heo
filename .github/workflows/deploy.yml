@@ -1,0 +1,95 @@
+name: Deploy (prod)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect server changes
+        id: changes
+        run: |
+          BASE_SHA="${{ github.event.before }}"
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA=$(git rev-parse HEAD~1 2>/dev/null || echo "")
+          fi
+          if [ -z "$BASE_SHA" ]; then
+            echo "SERVER_CHANGED=true" >> $GITHUB_ENV
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$GITHUB_SHA")
+          if echo "$CHANGED" | grep -Eq "^(src/|prisma/|package.json|package-lock.json|next.config.ts|Dockerfile|infra/docker/server/)"; then
+            echo "SERVER_CHANGED=true" >> $GITHUB_ENV
+          else
+            echo "SERVER_CHANGED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Prepare deploy variables
+        if: env.SERVER_CHANGED == 'true'
+        run: |
+          SAFE_REPO=$(printf '%s' "$GITHUB_REPOSITORY" | tr '/' '-' | tr -c 'A-Za-z0-9-_' '-' | sed 's/^-*//;s/-*$//')
+          SSH_USER="${{ secrets.SSH_USER }}"
+          if [ -z "$SSH_USER" ]; then SSH_USER="deployer"; fi
+          REMOTE_ROOT="${{ secrets.REMOTE_ROOT }}"
+          if [ -z "$REMOTE_ROOT" ]; then REMOTE_ROOT="/home/$SSH_USER"; fi
+          SERVER_APP_NAME="${{ secrets.SERVER_APP_NAME }}"
+          if [ -z "$SERVER_APP_NAME" ]; then SERVER_APP_NAME="${SAFE_REPO}-server"; fi
+          SERVER_IMAGE_NAME="${{ secrets.SERVER_IMAGE_NAME }}"
+          if [ -z "$SERVER_IMAGE_NAME" ]; then SERVER_IMAGE_NAME="$SERVER_APP_NAME"; fi
+          SERVER_IMAGE_TAG="${{ secrets.SERVER_IMAGE_TAG }}"
+          if [ -z "$SERVER_IMAGE_TAG" ]; then SERVER_IMAGE_TAG="latest"; fi
+          SERVER_APP_PORT="${{ secrets.SERVER_PORT_PROD }}"
+          if [ -z "$SERVER_APP_PORT" ]; then echo "SERVER_PORT_PROD 未设置"; exit 1; fi
+          echo "SAFE_REPO=$SAFE_REPO" >> $GITHUB_ENV
+          echo "SSH_USER=$SSH_USER" >> $GITHUB_ENV
+          echo "REMOTE_ROOT=$REMOTE_ROOT" >> $GITHUB_ENV
+          echo "SERVER_APP_NAME=$SERVER_APP_NAME" >> $GITHUB_ENV
+          echo "SERVER_IMAGE_NAME=$SERVER_IMAGE_NAME" >> $GITHUB_ENV
+          echo "SERVER_IMAGE_TAG=$SERVER_IMAGE_TAG" >> $GITHUB_ENV
+          echo "SERVER_APP_PORT=$SERVER_APP_PORT" >> $GITHUB_ENV
+
+      - name: Setup SSH
+        if: env.SERVER_CHANGED == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync files
+        if: env.SERVER_CHANGED == 'true'
+        run: |
+          REMOTE_DIR="$REMOTE_ROOT/main/$GITHUB_REPOSITORY"
+          echo "REMOTE_DIR=$REMOTE_DIR" >> $GITHUB_ENV
+          ssh "$SSH_USER@${{ secrets.SSH_HOST }}" "mkdir -p $REMOTE_DIR"
+          rsync -az --delete --exclude '.git' --exclude '.env' ./ "$SSH_USER@${{ secrets.SSH_HOST }}:$REMOTE_DIR"
+
+      - name: Write env
+        if: env.SERVER_CHANGED == 'true'
+        run: |
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "DATABASE_URL 未设置，请先在 GitHub Secrets 中配置";
+            exit 1;
+          fi
+          ssh "$SSH_USER@${{ secrets.SSH_HOST }}" "cat > $REMOTE_DIR/.env <<'ENV'
+SERVER_APP_NAME=$SERVER_APP_NAME
+SERVER_APP_PORT=$SERVER_APP_PORT
+SERVER_IMAGE_NAME=$SERVER_IMAGE_NAME
+SERVER_IMAGE_TAG=$SERVER_IMAGE_TAG
+DATABASE_URL=${{ secrets.DATABASE_URL }}
+ENV"
+
+      - name: Deploy server
+        if: env.SERVER_CHANGED == 'true'
+        run: |
+          ssh "$SSH_USER@${{ secrets.SSH_HOST }}" "cd $REMOTE_DIR && docker compose -f infra/docker/server/docker-compose.yml up -d --build"
+
+      - name: Health check
+        if: env.SERVER_CHANGED == 'true'
+        run: |
+          ssh "$SSH_USER@${{ secrets.SSH_HOST }}" "curl -fsS --retry 6 --retry-delay 4 --max-time 8 http://127.0.0.1:$SERVER_APP_PORT/api/cities"

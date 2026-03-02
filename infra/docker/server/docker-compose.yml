@@ -1,0 +1,14 @@
+services:
+  server:
+    container_name: ${SERVER_APP_NAME}
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    image: ${SERVER_IMAGE_NAME}:${SERVER_IMAGE_TAG}
+    ports:
+      - "${SERVER_APP_PORT}:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    restart: unless-stopped
