@@ -47,6 +47,14 @@ jobs:
           if [ -z "$SERVER_IMAGE_TAG" ]; then SERVER_IMAGE_TAG="latest"; fi
           SERVER_APP_PORT="${{ secrets.SERVER_PORT_PROD }}"
           if [ -z "$SERVER_APP_PORT" ]; then echo "SERVER_PORT_PROD 未设置"; exit 1; fi
+          SERVER_DB_NAME="${{ secrets.SERVER_DB_NAME }}"
+          if [ -z "$SERVER_DB_NAME" ]; then SERVER_DB_NAME="${SAFE_REPO}-db"; fi
+          POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
+          if [ -z "$POSTGRES_USER" ]; then POSTGRES_USER="heo"; fi
+          POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+          if [ -z "$POSTGRES_PASSWORD" ]; then POSTGRES_PASSWORD="heo_password_2026"; fi
+          POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
+          if [ -z "$POSTGRES_DB" ]; then POSTGRES_DB="heo"; fi
           echo "SAFE_REPO=$SAFE_REPO" >> $GITHUB_ENV
           echo "SSH_USER=$SSH_USER" >> $GITHUB_ENV
           echo "REMOTE_ROOT=$REMOTE_ROOT" >> $GITHUB_ENV
@@ -54,6 +62,10 @@ jobs:
           echo "SERVER_IMAGE_NAME=$SERVER_IMAGE_NAME" >> $GITHUB_ENV
           echo "SERVER_IMAGE_TAG=$SERVER_IMAGE_TAG" >> $GITHUB_ENV
           echo "SERVER_APP_PORT=$SERVER_APP_PORT" >> $GITHUB_ENV
+          echo "SERVER_DB_NAME=$SERVER_DB_NAME" >> $GITHUB_ENV
+          echo "POSTGRES_USER=$POSTGRES_USER" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> $GITHUB_ENV
+          echo "POSTGRES_DB=$POSTGRES_DB" >> $GITHUB_ENV
 
       - name: Setup SSH
         if: env.SERVER_CHANGED == 'true'
@@ -75,8 +87,9 @@ jobs:
         if: env.SERVER_CHANGED == 'true'
         run: |
           if [ -z "${{ secrets.DATABASE_URL }}" ]; then
-            echo "DATABASE_URL 未设置，请先在 GitHub Secrets 中配置";
-            exit 1;
+            DATABASE_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/$POSTGRES_DB?schema=public"
+          else
+            DATABASE_URL="${{ secrets.DATABASE_URL }}"
           fi
           API_BASE="${{ secrets.NEXT_PUBLIC_API_BASE }}"
           if [ -z "$API_BASE" ]; then
@@ -87,8 +100,12 @@ jobs:
           SERVER_APP_PORT=$SERVER_APP_PORT
           SERVER_IMAGE_NAME=$SERVER_IMAGE_NAME
           SERVER_IMAGE_TAG=$SERVER_IMAGE_TAG
+          SERVER_DB_NAME=$SERVER_DB_NAME
+          POSTGRES_USER=$POSTGRES_USER
+          POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+          POSTGRES_DB=$POSTGRES_DB
           NEXT_PUBLIC_API_BASE=$API_BASE
-          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          DATABASE_URL=$DATABASE_URL
           ENV"
 
       - name: Deploy server
