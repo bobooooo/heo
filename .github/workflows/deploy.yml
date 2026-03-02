@@ -77,12 +77,12 @@ jobs:
             exit 1;
           fi
           ssh "$SSH_USER@${{ secrets.SSH_HOST }}" "cat > $REMOTE_DIR/.env <<'ENV'
-SERVER_APP_NAME=$SERVER_APP_NAME
-SERVER_APP_PORT=$SERVER_APP_PORT
-SERVER_IMAGE_NAME=$SERVER_IMAGE_NAME
-SERVER_IMAGE_TAG=$SERVER_IMAGE_TAG
-DATABASE_URL=${{ secrets.DATABASE_URL }}
-ENV"
+          SERVER_APP_NAME=$SERVER_APP_NAME
+          SERVER_APP_PORT=$SERVER_APP_PORT
+          SERVER_IMAGE_NAME=$SERVER_IMAGE_NAME
+          SERVER_IMAGE_TAG=$SERVER_IMAGE_TAG
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          ENV"
 
       - name: Deploy server
         if: env.SERVER_CHANGED == 'true'
